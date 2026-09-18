@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 3.9 matches the python3 apt provides on Raspberry Pi OS Bullseye,
+      # the actual deployment target; the code must stay compatible with it.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Syntax check
+        run: python -m compileall -q xtream_filter tests
+
+      - name: Test
+        run: python -m unittest discover -s tests -v
