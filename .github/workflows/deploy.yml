@@ -1,0 +1,40 @@
+name: Deploy
+
+# Runs after every merge to main. xtream-filter is plain Python, so there
+# is no build step: the self-hosted runner registered on the Raspberry Pi
+# itself (see deploy/setup-runner.sh) checks out the repo directly and
+# installs the updated xtream_filter/ package in place.
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, raspberry-pi]
+    # Only ever runs on whatever machine the self-hosted runner is
+    # installed on (your Pi); a GitHub-hosted runner never has this label.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install updated code and restart service
+        # Delegates to a fixed, root-owned wrapper script installed by
+        # deploy/setup-runner.sh, which only this runner user may sudo,
+        # and only for this exact script (see /etc/sudoers.d/xtream-filter-deploy).
+        run: sudo /opt/xtream-filter/deploy.sh "$GITHUB_WORKSPACE"
+
+      - name: Health check
+        run: |
+          set -euo pipefail
+          PORT="$(grep -oP 'listen_addr:\s*"?:\K[0-9]+' /opt/xtream-filter/config.yaml || true)"
+          PORT="${PORT:-8081}"
+          for i in $(seq 1 10); do
+            if curl -fsS "http://localhost:${PORT}/healthz"; then
+              echo
+              echo "Service is healthy."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Service did not become healthy after restart" >&2
+          journalctl -u xtream-filter --no-pager -n 50 >&2
+          exit 1

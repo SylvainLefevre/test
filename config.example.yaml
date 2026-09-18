@@ -1,0 +1,76 @@
+# xtream-filter configuration.
+# Copy this file to config.yaml and adjust it, then run:
+#   python3 -m xtream_filter --config config.yaml
+
+# Credentials of the ORIGINAL Xtream source you are subscribed to.
+# These are never exposed to your IPTV players.
+source:
+  base_url: "http://provider.example.com:8080"
+  username: "source_username"
+  password: "source_password"
+  timeout_seconds: 20
+
+# The local API this program publishes. Point your IPTV player (TiviMate,
+# etc.) at http://<raspberry-pi-ip>:8081 with these credentials, exactly
+# like you would with a normal Xtream Codes panel.
+server:
+  listen_addr: ":8081"
+  username: "local_username"
+  password: "local_password"
+  # Optional: set this if players struggle to auto-detect the Pi's address
+  # (e.g. "http://192.168.1.50:8081"). Leave empty to auto-detect from the
+  # incoming request's Host header.
+  public_base_url: ""
+
+# How often to re-fetch the catalog from the source and re-apply filters.
+refresh:
+  interval_minutes: 30
+
+streaming:
+  # "redirect": the Pi replies with an HTTP redirect to the real source URL;
+  #             playback traffic never goes through the Pi (recommended for
+  #             a Raspberry Pi 3 — near-zero CPU/bandwidth cost).
+  # "proxy":    the Pi relays every byte of every stream itself. Only use
+  #             this if you specifically need to hide the source's address
+  #             from players; a Pi 3 will struggle with more than a couple
+  #             of simultaneous streams in this mode.
+  mode: "redirect"
+
+# Reusable language definitions: each language is a list of regular
+# expressions (case sensitivity you control per-pattern via the usual
+# `(?i)` inline flag) matched against category names.
+languages:
+  FR:
+    - "(?i)\\bFR\\b"
+    - "(?i)fran[cç]e"
+    - "🇫🇷"
+  EN:
+    - "(?i)\\bEN\\b"
+    - "(?i)\\bUK\\b"
+    - "(?i)\\bUSA?\\b"
+  ES:
+    - "(?i)\\bES\\b"
+    - "(?i)espa[nñ]a"
+
+filters:
+  live:
+    categories:
+      mode: "exclude"      # all | include | exclude
+      names: ["adult", "xxx", "vod", "series"]
+    languages:
+      mode: "include"      # all | include | exclude
+      codes: ["FR"]
+  vod:
+    categories:
+      mode: "exclude"
+      names: ["adult", "xxx"]
+    languages:
+      mode: "include"
+      codes: ["FR"]
+  series:
+    categories:
+      mode: "exclude"
+      names: ["adult", "xxx"]
+    languages:
+      mode: "include"
+      codes: ["FR"]

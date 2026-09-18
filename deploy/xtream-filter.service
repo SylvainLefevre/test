@@ -1,0 +1,22 @@
+[Unit]
+Description=xtream-filter - filtered local Xtream Codes API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=xtream-filter
+Group=xtream-filter
+WorkingDirectory=/opt/xtream-filter
+ExecStart=/usr/bin/python3 -m xtream_filter --config /opt/xtream-filter/config.yaml
+Restart=on-failure
+RestartSec=5
+
+# Basic hardening; relax if it causes issues on your setup.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/xtream-filter
+
+[Install]
+WantedBy=multi-user.target
